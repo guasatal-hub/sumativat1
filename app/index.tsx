@@ -1,56 +1,71 @@
-import React from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router";
-import { useTasks } from "../context/TaskContext";
+import { useEffect, useState } from "react";
+import { View, FlatList, StyleSheet } from "react-native";
 import TaskItem from "../components/TaskItem";
+import TaskForm from "../components/TaskForm";
 
-export default function HomeScreen() {
-  const { tasks, loading, refresh } = useTasks();
-  const router = useRouter();
+import { fetchTasks, createTask, updateTask, deleteTask } from "../lib/api";
+
+export default function Index() {
+  const [tasks, setTasks] = useState([]);
+  const [editingTask, setEditingTask] = useState(null);
+
+  useEffect(() => {
+    loadTasks();
+  }, []);
+
+  const loadTasks = async () => {
+    const data = await fetchTasks();
+    setTasks(data);
+  };
+
+  const handleCreate = async (task) => {
+    const newTask = await createTask(task);
+    setTasks([...tasks, newTask]);
+  };
+
+  const handleEdit = async (updated) => {
+    if (!editingTask) return;
+
+    const updatedTask = await updateTask(editingTask.id, updated);
+
+    setTasks(tasks.map((t) => (t.id === editingTask.id ? updatedTask : t)));
+
+    setEditingTask(null);
+  };
+
+  const handleDelete = async (id) => {
+    await deleteTask(id);
+    setTasks(tasks.filter((t) => t.id !== id));
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Mis Tareas</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => router.push("/new")}>
-          <Text style={{ color: "white", fontSize: 22 }}>+</Text>
-        </TouchableOpacity>
-      </View>
+      <TaskForm
+        onSubmit={editingTask ? handleEdit : handleCreate}
+        initialValue={editingTask}
+      />
 
-      {loading ? (
-        <ActivityIndicator size="large" color="#fff" />
-      ) : (
-        <FlatList
-          data={tasks}
-          keyExtractor={(i) => String(i.id)}
-          renderItem={({ item }) => <TaskItem task={item} onRefresh={refresh} />}
-          contentContainerStyle={{ padding: 16 }}
-          refreshing={loading}
-          onRefresh={refresh}
-        />
-      )}
+      <FlatList
+        data={tasks}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <TaskItem
+            task={item}
+            onEdit={(t) => setEditingTask(t)}
+            onDelete={handleDelete}
+          />
+        )}
+        style={{ width: "100%" }}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f1724" },
-  header: {
-    paddingTop: 48,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#0b1220",
-  },
-  title: { color: "#fff", fontSize: 22, fontWeight: "bold" },
-  addBtn: {
-    backgroundColor: "#6366f1",
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
+  container: {
+    flex: 1,
+    padding: 15,
+    paddingTop: 40,
+    backgroundColor: "#fff",
   },
 });

@@ -1,53 +1,51 @@
-import { useState } from "react";
-import { View, TextInput, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { useState, useEffect } from "react";
+import { View, Text, TextInput, StyleSheet, Button } from "react-native";
 
-export default function TaskForm({ initial = {}, onSubmit }) {
-  const [title, setTitle] = useState(initial.title ?? "");
-  const [description, setDescription] = useState(initial.description ?? "");
+export default function TaskForm({ onSubmit, initialValue }) {
+  const [title, setTitle] = useState("");
 
-  const submit = () => {
-    if (title.trim().length < 3)
-      return Alert.alert("Error", "El título debe tener mínimo 3 caracteres");
+  useEffect(() => {
+    if (initialValue) setTitle(initialValue.title);
+  }, [initialValue]);
 
-    onSubmit({ title, description });
+  const handleSubmit = () => {
+    if (!title.trim()) return;
+    onSubmit({ title });
+    setTitle("");
   };
 
   return (
-    <View>
+    <View style={styles.container}>
+      <Text style={styles.label}>Título de la tarea:</Text>
+
       <TextInput
         style={styles.input}
-        placeholder="Título"
-        placeholderTextColor="#9ca3af"
+        placeholder="Escribe una tarea..."
         value={title}
-        onChangeText={setTitle}
+        onChangeText={(text) => setTitle(text)}
       />
-      <TextInput
-        style={[styles.input, { height: 100 }]}
-        placeholder="Descripción"
-        placeholderTextColor="#9ca3af"
-        value={description}
-        onChangeText={setDescription}
-        multiline
-      />
-      <TouchableOpacity style={styles.btn} onPress={submit}>
-        <Text style={{ color: "white" }}>Guardar</Text>
-      </TouchableOpacity>
+
+      <Button title={initialValue ? "Guardar cambios" : "Crear tarea"} onPress={handleSubmit} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  input: {
-    backgroundColor: "#0b1220",
-    color: "white",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
+  container: {
+    padding: 15,
+    backgroundColor: "#fff",
+    width: "100%",
   },
-  btn: {
-    backgroundColor: "#6366f1",
-    padding: 14,
-    borderRadius: 10,
-    alignItems: "center",
+  label: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  input: {
+    marginVertical: 12,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    fontSize: 16,
   },
 });
